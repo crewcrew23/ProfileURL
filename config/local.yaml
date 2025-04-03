@@ -1,0 +1,4 @@
+env: "local"
+addr: ":8080"
+storage_path: "./storage/url_profile.db"
+token_ttl: 24h
