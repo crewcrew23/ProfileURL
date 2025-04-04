@@ -1,6 +1,6 @@
 ## For run needed
  - ```./config/<config_name>.yaml```
- - ```./storage/<name_db>```
+ - ```./storage/<name_db>``` -- if use sqlite
  <br> db_name entered on config ```./config/<config_name>.yaml ```
 <br>
 - config example <br>
