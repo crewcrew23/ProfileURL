@@ -16,6 +16,7 @@ type UserSaver interface {
 
 type UserProvider interface {
 	User(email string) (*models.User, error)
+	UserById(id int) (*models.User, error)
 }
 
 type AuthService struct {
@@ -54,6 +55,15 @@ func (a *AuthService) CreateUser(email string, password string) (int, *models.Us
 
 func (a *AuthService) User(email string) (*models.User, error) {
 	u, err := a.userProvider.User(email)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (a *AuthService) UserById(id int) (*models.User, error) {
+	u, err := a.userProvider.UserById(id)
 	if err != nil {
 		return nil, err
 	}

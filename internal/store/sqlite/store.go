@@ -144,8 +144,7 @@ func (s *Store) User(email string) (*models.User, error) {
 	return &user, nil
 
 }
-
-func (s *Store) UserByID(id int) (*models.User, error) {
+func (s *Store) UserById(id int) (*models.User, error) {
 	rows, err := s.db.Query(`
         SELECT 
             u.id, u.email, u.about_text,

@@ -11,7 +11,7 @@ type Config struct {
 	Env         string `yaml:"env" env-required:"true"`
 	Addr        string `yaml:"addr" env-required:"true"`
 	StoragePath string `yaml:"storage_path" env-required:"true"`
-	TokenTLL    string `yaml:"token_ttl" env-required:"true"`
+	TokenTTL    string `yaml:"token_ttl" env-required:"true"`
 	Secret      string `yaml:"secret" env-required:"true"`
 }
 
