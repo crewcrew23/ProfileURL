@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"url_profile/internal/domain/models"
 	"url_profile/internal/lib/jwt"
 	"url_profile/internal/store"
@@ -29,6 +30,21 @@ func (s *server) handleSignUp() http.HandlerFunc {
 		}
 
 		s.log.Debug("ReqUserData:", slog.Any("Data", req))
+
+		if req.Email == "" {
+			s.error(w, http.StatusBadRequest, fmt.Errorf("email is required"))
+			return
+		}
+
+		if len(req.Password) < 6 {
+			s.error(w, http.StatusBadRequest, fmt.Errorf("password cannot be less than 6 characters"))
+			return
+		}
+
+		if !isValidEmail(req.Email) {
+			s.error(w, http.StatusBadRequest, fmt.Errorf("invalid email"))
+			return
+		}
 
 		code, u, err := s.userService.CreateUser(req.Email, req.Password)
 		if err != nil {
@@ -254,10 +270,10 @@ func (s *server) handlerUpdateLink() http.HandlerFunc {
 
 		if err := s.userService.UpdateLink(userID, link); err != nil {
 			if errors.Is(err, store.ErrLinkNotFound) {
-				s.error(w, http.StatusNotFound, nil)
+				s.error(w, http.StatusNotFound, fmt.Errorf(""))
 				return
 			}
-			s.error(w, http.StatusInternalServerError, nil)
+			s.error(w, http.StatusInternalServerError, fmt.Errorf(""))
 		}
 
 		s.respond(w, http.StatusOK, nil)
@@ -282,9 +298,15 @@ func (s *server) handlerDeleteLink() http.HandlerFunc {
 				s.error(w, http.StatusNotFound, err)
 				return
 			}
-			s.error(w, http.StatusInternalServerError, nil)
+			s.error(w, http.StatusInternalServerError, fmt.Errorf(""))
 		}
 
 		s.respond(w, http.StatusOK, nil)
 	}
+}
+
+func isValidEmail(email string) bool {
+	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	match, _ := regexp.MatchString(emailRegex, email)
+	return match
 }

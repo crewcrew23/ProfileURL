@@ -15,5 +15,11 @@ secret: <secret_key> // jwt secret
 ```
 
 ## Run
+ ### local
 - ``` make ``` exec build and migrations
 - ``` ./app --config=<path_to_config>```
+
+ ### docker
+ -  ``` docker build -t go-app . ``` - build <br>
+ - ``` docker run -p <external_port>:<internal_port> go-app ``` - run <br>
+ - example ```  docker run -p 8080:8080 go-app ```
