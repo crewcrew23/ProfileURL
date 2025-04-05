@@ -13,7 +13,6 @@ ENV CGO_ENABLED=1
 
 RUN go build -o ./app ./cmd/app
 RUN go build -o ./migrator ./cmd/migrator
-# Создаём нужные директории
 RUN mkdir -p ./config ./storage
 
 COPY ./config/local.yaml ./config/local.yaml
