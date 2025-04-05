@@ -20,6 +20,8 @@ type UserProvider interface {
 	UserById(id int) (*models.User, error)
 	UpdateAboutMe(id int, text string) error
 	AddLink(userID int, link models.ReqLink) error
+	UpdateLink(userID int, link *models.ReqUpdateLink) error
+	DeleteLink(userID int, linkID int) error
 }
 
 type AuthService struct {
@@ -99,6 +101,22 @@ func (a *AuthService) UpdateAboutMe(id int, text string) error {
 func (a *AuthService) AddLink(userID int, link models.ReqLink) error {
 	if err := a.userProvider.AddLink(userID, link); err != nil {
 		a.log.Debug("Failet to save link", slog.String("error", err.Error()))
+		return err
+	}
+
+	return nil
+}
+
+func (a *AuthService) UpdateLink(userID int, link *models.ReqUpdateLink) error {
+	if err := a.userProvider.UpdateLink(userID, link); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *AuthService) DeleteLink(userID int, linkID int) error {
+	if err := a.userProvider.DeleteLink(userID, linkID); err != nil {
 		return err
 	}
 

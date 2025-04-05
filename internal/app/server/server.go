@@ -24,6 +24,8 @@ type UserService interface {
 	UserById(id int) (*models.User, error)
 	UpdateAboutMe(id int, text string) error
 	AddLink(userID int, link models.ReqLink) error
+	UpdateLink(userID int, link *models.ReqUpdateLink) error
+	DeleteLink(userID int, linkID int) error
 }
 
 type server struct {
@@ -70,7 +72,8 @@ func (s *server) configureRouter() {
 	private.HandleFunc("/about", s.handlerUpdateAboutMe()).Methods(http.MethodPost)
 	//lINKS
 	private.HandleFunc("/link", s.handlerAddLink()).Methods(http.MethodPost)
-	// private.HandleFunc("/link", s.handlerDeleteLink()).Methods(http.MethodDelete)
+	private.HandleFunc("/link", s.handlerUpdateLink()).Methods(http.MethodPut)
+	private.HandleFunc("/link", s.handlerDeleteLink()).Methods(http.MethodDelete)
 }
 
 func (s *server) error(w http.ResponseWriter, code int, err error) {

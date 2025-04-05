@@ -6,6 +6,7 @@ var (
 	ErrUserNotFound        = errors.New("user not found")
 	ErrUserAlreadyExists   = errors.New("user already exists")
 	ErrLinkAlreadyExists   = errors.New("link already exists")
+	ErrLinkNotFound        = errors.New("link not found")
 	ErrDatabaseOperation   = errors.New("database operation failed")
 	ErrLastInsertIDFailed  = errors.New("failed to get last insert ID")
 	ErrUserRetrievalFailed = errors.New("failed to retrieve created user")

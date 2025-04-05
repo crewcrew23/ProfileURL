@@ -242,3 +242,49 @@ func (s *server) handlerAddLink() http.HandlerFunc {
 		s.respond(w, http.StatusOK, nil)
 	}
 }
+
+func (s *server) handlerUpdateLink() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value(ctxUserIdKey).(int)
+		link := &models.ReqUpdateLink{}
+		if err := json.NewDecoder(r.Body).Decode(&link); err != nil {
+			s.error(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
+			return
+		}
+
+		if err := s.userService.UpdateLink(userID, link); err != nil {
+			if errors.Is(err, store.ErrLinkNotFound) {
+				s.error(w, http.StatusNotFound, nil)
+				return
+			}
+			s.error(w, http.StatusInternalServerError, nil)
+		}
+
+		s.respond(w, http.StatusOK, nil)
+	}
+
+}
+
+func (s *server) handlerDeleteLink() http.HandlerFunc {
+	type LinkID struct {
+		LinkID int `json:"id"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value(ctxUserIdKey).(int)
+		link := &LinkID{}
+		if err := json.NewDecoder(r.Body).Decode(link); err != nil {
+			s.error(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
+			return
+		}
+
+		if err := s.userService.DeleteLink(userID, link.LinkID); err != nil {
+			if errors.Is(err, store.ErrLinkNotFound) {
+				s.error(w, http.StatusNotFound, err)
+				return
+			}
+			s.error(w, http.StatusInternalServerError, nil)
+		}
+
+		s.respond(w, http.StatusOK, nil)
+	}
+}

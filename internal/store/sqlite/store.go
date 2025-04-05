@@ -268,6 +268,7 @@ func (s *Store) UpdateAboutMe(id int, text string) error {
 			slog.String("error", err.Error()))
 		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
 	}
+	defer stmt.Close()
 
 	res, err := stmt.Exec(text, id)
 	if err != nil {
@@ -322,6 +323,114 @@ func (s *Store) AddLink(userID int, link models.ReqLink) error {
 		s.log.Error("failed to insert link",
 			slog.Int("user_id", userID),
 			slog.Any("link", link),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+
+	return nil
+}
+
+func (s *Store) UpdateLink(userID int, link *models.ReqUpdateLink) error {
+	var exists bool
+
+	err := s.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM links WHERE id = ? AND user_id = ?
+		)`,
+		link.LinkID, userID).Scan(&exists)
+
+	if err != nil {
+		s.log.Error("failed to check link existence",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", link.LinkID),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+
+	if !exists {
+		s.log.Warn("link not found or doesn't belong to user",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", link.LinkID))
+		return store.ErrLinkNotFound
+	}
+
+	stmt, err := s.db.Prepare(`
+        UPDATE links 
+        SET 
+            link_name = ?,
+            link_color = ?,
+            link_path = ?
+        WHERE user_id = ? AND id = ?
+    `)
+	if err != nil {
+		s.log.Error("failed to prepare update statement",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", link.LinkID),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(
+		link.LinkName,
+		link.LinkColor,
+		link.LinkPath,
+		userID,
+		link.LinkID,
+	)
+	if err != nil {
+		s.log.Error("failed to execute link update",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", link.LinkID),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+
+	s.log.Debug("link updated successfully",
+		slog.Int("user_id", userID),
+		slog.Int("link_id", link.LinkID))
+	return nil
+}
+
+func (s *Store) DeleteLink(userID int, linkID int) error {
+
+	var exists bool
+	err := s.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM links WHERE id = ? AND user_id = ?
+		)`,
+		linkID, userID).Scan(&exists)
+
+	if err != nil {
+		s.log.Error("failed to check link existence",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", linkID),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+
+	if !exists {
+		s.log.Warn("link not found or doesn't belong to user",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", linkID))
+		return store.ErrLinkNotFound
+	}
+
+	stmt, err := s.db.Prepare("DELETE FROM links WHERE id = ? AND user_id = ?")
+	if err != nil {
+		s.log.Error("failed to prepare delete statement",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", linkID),
+			slog.String("error", err.Error()))
+		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(linkID, userID)
+	if err != nil {
+		s.log.Error("failed to execute delete link",
+			slog.Int("user_id", userID),
+			slog.Int("link_id", linkID),
 			slog.String("error", err.Error()))
 		return fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
 	}
