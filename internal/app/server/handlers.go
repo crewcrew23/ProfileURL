@@ -2,11 +2,13 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"url_profile/internal/domain/models"
 	"url_profile/internal/lib/jwt"
+	"url_profile/internal/store"
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
@@ -34,7 +36,7 @@ func (s *server) handleSignUp() http.HandlerFunc {
 				s.error(w, http.StatusConflict, fmt.Errorf("user with email %s already exists", req.Email))
 				return
 			}
-			s.error(w, code, err)
+			s.error(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 			return
 		}
 
@@ -69,10 +71,18 @@ func (s *server) handleLogin() http.HandlerFunc {
 
 		u, err := s.userService.User(req.Email)
 		if err != nil {
+			if errors.Is(err, store.ErrUserNotFound) {
+				s.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
+				s.error(w, http.StatusBadRequest, fmt.Errorf("incorrect login or password"))
+				return
+			}
+
 			s.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
-			s.error(w, http.StatusBadRequest, fmt.Errorf("incorrect login or password"))
+			s.error(w, http.StatusInternalServerError, fmt.Errorf("server internal error"))
 			return
 		}
+
+		s.log.Debug("User", slog.Any("data", u))
 
 		if err := bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(req.Password)); err != nil {
 			s.log.Debug("Bcryp retrn error from compare password:", slog.String("err", err.Error()))
@@ -103,9 +113,18 @@ func (s *server) handlerMyProfle() http.HandlerFunc {
 		s.log.Debug("UserID in Context: ", slog.Int("ctxID", r.Context().Value(ctxUserIdKey).(int)))
 		u, err := s.userService.UserById(r.Context().Value(ctxUserIdKey).(int))
 		if err != nil {
-			s.error(w, http.StatusNotFound, fmt.Errorf("user not found"))
+			if errors.Is(err, store.ErrUserNotFound) {
+				s.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
+				s.error(w, http.StatusBadRequest, fmt.Errorf("user not found"))
+				return
+			}
+
+			s.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
+			s.error(w, http.StatusInternalServerError, fmt.Errorf("server internal error"))
 			return
 		}
+
+		s.log.Debug("User", slog.Any("data", u))
 
 		uv.Email = u.Email
 		uv.AboutText = u.AboutText
@@ -134,7 +153,14 @@ func (s *server) handlerGetProfile() http.HandlerFunc {
 
 		u, err := s.userService.User(email)
 		if err != nil {
-			s.error(w, http.StatusNotFound, fmt.Errorf("user not found"))
+			if errors.Is(err, store.ErrUserNotFound) {
+				s.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
+				s.error(w, http.StatusBadRequest, fmt.Errorf("user not found"))
+				return
+			}
+
+			s.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
+			s.error(w, http.StatusInternalServerError, fmt.Errorf("server internal error"))
 			return
 		}
 
@@ -148,8 +174,71 @@ func (s *server) handlerGetProfile() http.HandlerFunc {
 	}
 }
 
+func (s *server) handlerUpdateAboutMe() http.HandlerFunc {
+	type ReqText struct {
+		Text string `json:"text"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		text := &ReqText{}
+		if err := json.NewDecoder(r.Body).Decode(text); err != nil {
+			s.log.Debug("DECODE ERROR:", slog.String("err", err.Error()))
+			s.error(w, http.StatusBadRequest, fmt.Errorf("invalid input data"))
+			return
+		}
+
+		if err := s.userService.UpdateAboutMe(r.Context().Value(ctxUserIdKey).(int), text.Text); err != nil {
+			if errors.Is(err, store.ErrNoRowsAffected) {
+				s.log.Debug("DataBase Error:", slog.String("err", err.Error()))
+				s.error(w, http.StatusConflict, err)
+			}
+			s.log.Debug("DataBase Error:", slog.String("err", err.Error()))
+			s.error(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(w, http.StatusOK, nil)
+	}
+}
+
 func (s *server) checkHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.respond(w, 200, nil)
+	}
+}
+
+func (s *server) handlerAddLink() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value(ctxUserIdKey).(int)
+		var links []models.ReqLink
+		if err := json.NewDecoder(r.Body).Decode(&links); err != nil {
+			s.error(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
+			return
+		}
+
+		for _, link := range links {
+			if link.LinkName == "" || link.LinkPath == "" {
+				s.error(w, http.StatusBadRequest, fmt.Errorf("link_name and link_path are required"))
+				return
+			}
+
+			if err := s.userService.AddLink(userID, link); err != nil {
+				if errors.Is(err, store.ErrLinkAlreadyExists) {
+					s.error(w, http.StatusConflict, err)
+					return
+				}
+
+				if errors.Is(err, store.ErrUserNotFound) {
+					s.error(w, http.StatusNotFound, err)
+					return
+				}
+
+				s.log.Debug("Error Create Link", slog.String("error", err.Error()))
+				s.error(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
+		s.respond(w, http.StatusOK, nil)
 	}
 }

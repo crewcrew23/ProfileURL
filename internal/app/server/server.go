@@ -22,6 +22,8 @@ type UserService interface {
 	CreateUser(email string, password string) (code int, user *models.User, err error)
 	User(email string) (*models.User, error)
 	UserById(id int) (*models.User, error)
+	UpdateAboutMe(id int, text string) error
+	AddLink(userID int, link models.ReqLink) error
 }
 
 type server struct {
@@ -50,17 +52,25 @@ func (s *server) configureRouter() {
 	s.Router.Use(s.logRequest)
 	s.Router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
+	//PUBLIC ROUTES
 	s.Router.HandleFunc("/api/auth/sign-up", s.handleSignUp()).Methods(http.MethodPost)
 	s.Router.HandleFunc("/api/auth/login", s.handleLogin()).Methods(http.MethodPost)
 	s.Router.HandleFunc("/health", s.checkHandler()).Methods(http.MethodGet)
 
-	// TODO:
+	//PUBLIC ROUTES
 	public := s.Router.PathPrefix("/api/profile").Subrouter()
-	private := s.Router.PathPrefix("/api/profile").Subrouter()
-
 	public.HandleFunc("/{email}", s.handlerGetProfile()).Methods(http.MethodGet)
-	private.Use(s.authMiddleware)
+
+	//PRIVATE ROUTES
+	private := s.Router.PathPrefix("/api/profile").Subrouter()
+	private.Use(s.authMiddleware) //auth middleware check and verified token
 	private.HandleFunc("", s.handlerMyProfle()).Methods(http.MethodGet)
+	// TODO:
+	//ABOUT
+	private.HandleFunc("/about", s.handlerUpdateAboutMe()).Methods(http.MethodPost)
+	//lINKS
+	private.HandleFunc("/link", s.handlerAddLink()).Methods(http.MethodPost)
+	// private.HandleFunc("/link", s.handlerDeleteLink()).Methods(http.MethodDelete)
 }
 
 func (s *server) error(w http.ResponseWriter, code int, err error) {
