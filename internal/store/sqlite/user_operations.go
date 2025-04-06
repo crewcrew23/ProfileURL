@@ -8,12 +8,14 @@ import (
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
+	"url_profile/internal/store/sqlite/query"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func (s *Store) insertUser(email string, pass []byte) (int64, error) {
-	stmt, err := s.db.Prepare("INSERT INTO users (email, pass_hash) VALUES($1, $2) RETURNING id")
+
+	stmt, err := s.db.Prepare(query.InsertUser)
 	if err != nil {
 		s.log.Error("error from PREPARE SQL USERS", slog.String("err", err.Error()))
 		return 0, store.ErrDatabaseOperation
@@ -47,7 +49,7 @@ func (s *Store) insertUser(email string, pass []byte) (int64, error) {
 
 func (s *Store) createdUser(userID int64) (*models.User, error) {
 	u := &models.User{}
-	err := s.db.QueryRow("SELECT id, email FROM users WHERE id = ?", userID).Scan(
+	err := s.db.QueryRow(query.CreatedUser, userID).Scan(
 		&u.ID,
 		&u.Email,
 	)
@@ -70,10 +72,8 @@ func (s *Store) createdUser(userID int64) (*models.User, error) {
 }
 
 func (s *Store) userRowsByEmail(email string) (*sql.Rows, error) {
-	query := "SELECT u.id, u.email, u.pass_hash, u.about_text, l.id, l.user_id, l.link_name, l.link_color,l.link_path FROM users u LEFT JOIN links l ON u.id = l.user_id WHERE u.email = ?"
 
-	rows, err := s.db.Query(query, email)
-	s.log.Debug("Query", slog.String("Q", query), slog.String("email", email))
+	rows, err := s.db.Query(query.UsersRowsByEmail, email)
 	if err != nil {
 		s.log.Error("failed to query user data",
 			slog.String("error", err.Error()))
@@ -84,14 +84,7 @@ func (s *Store) userRowsByEmail(email string) (*sql.Rows, error) {
 }
 
 func (s *Store) userRowsByID(id int) (*sql.Rows, error) {
-	rows, err := s.db.Query(`
-        SELECT 
-            u.id, u.email, u.pass_hash, u.about_text,
-            l.id, l.user_id, l.link_name, l.link_color,l.link_path
-        FROM users u 
-        LEFT JOIN links l ON u.id = l.user_id
-        WHERE u.id = ?
-    `, id)
+	rows, err := s.db.Query(query.UsersRowsByID, id)
 	if err != nil {
 		s.log.Error("failed to query user data",
 			slog.String("error", err.Error()))
@@ -169,7 +162,7 @@ func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 }
 
 func (s *Store) updateAboutMe(id int, text string) (sql.Result, error) {
-	stmt, err := s.db.Prepare("UPDATE users SET about_text = ? WHERE id = ?")
+	stmt, err := s.db.Prepare(query.UpdateAboutMe)
 	if err != nil {
 		s.log.Error("failed to prepare update statement",
 			slog.Int("user_id", id),

@@ -6,12 +6,13 @@ import (
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
+	"url_profile/internal/store/sqlite/query"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func (s *Store) insertLink(userID int, link models.ReqLink) error {
-	stmt, err := s.db.Prepare("INSERT INTO links (user_id, link_name, link_color, link_path) VALUES (?, ?, ?, ?)")
+	stmt, err := s.db.Prepare(query.InsertLink)
 	if err != nil {
 		s.log.Error("failed to prepare update statement",
 			slog.Int("user_id", userID),
@@ -47,10 +48,7 @@ func (s *Store) insertLink(userID int, link models.ReqLink) error {
 func (s *Store) existsLink(userID int, linkID int) error {
 	var exists bool
 
-	err := s.db.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 FROM links WHERE id = ? AND user_id = ?
-		)`,
+	err := s.db.QueryRow(query.ExistsLink,
 		linkID, userID).Scan(&exists)
 
 	if err != nil {
@@ -72,14 +70,7 @@ func (s *Store) existsLink(userID int, linkID int) error {
 }
 
 func (s *Store) updateLink(userID int, link *models.ReqUpdateLink) error {
-	stmt, err := s.db.Prepare(`
-        UPDATE links 
-        SET 
-            link_name = ?,
-            link_color = ?,
-            link_path = ?
-        WHERE user_id = ? AND id = ?
-    `)
+	stmt, err := s.db.Prepare(query.UpdateLink)
 	if err != nil {
 		s.log.Error("failed to prepare update statement",
 			slog.Int("user_id", userID),
@@ -112,7 +103,7 @@ func (s *Store) updateLink(userID int, link *models.ReqUpdateLink) error {
 }
 
 func (s *Store) deleteLink(userID int, linkID int) error {
-	stmt, err := s.db.Prepare("DELETE FROM links WHERE id = ? AND user_id = ?")
+	stmt, err := s.db.Prepare(query.DeleteLink)
 	if err != nil {
 		s.log.Error("failed to prepare delete statement",
 			slog.Int("user_id", userID),
