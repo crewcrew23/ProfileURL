@@ -13,10 +13,6 @@ token_ttl: <time> // format 1s, 1m, 1h — LIFE TIME JWT
 secret: <secret_key> // jwt secret
  ```
 
-yaml
-Копировать
-Редактировать
-
 ---
 
 ## Run
