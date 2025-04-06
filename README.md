@@ -8,7 +8,7 @@
 ```
 env: (local, dev, prod) // chose one
 addr: ":<port>"
-storage_path: "<path_to_db>" //if sqlite you need create dir ./storage  and entered ./storage/<bd_name>
+storage_path: "<path_to_db>" //if sqlite you need create dir ./storage  and entered ./storage/<bd_name>.db
 token_ttl: <time> //format 1s, 1m, 1h LIFE TIME JWT
 secret: <secret_key> // jwt secret
 
