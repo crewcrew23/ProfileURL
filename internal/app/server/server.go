@@ -1,21 +1,15 @@
 package server
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
+	handler "url_profile/internal/app/server/handlers"
+	"url_profile/internal/app/server/middleware"
 	"url_profile/internal/domain/models"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-)
-
-type ctxKey int8
-
-const (
-	ctxRequestKey ctxKey = iota
-	ctxUserIdKey  ctxKey = iota
 )
 
 type UserService interface {
@@ -29,20 +23,28 @@ type UserService interface {
 }
 
 type server struct {
-	log         *slog.Logger
-	Router      *mux.Router
-	userService UserService
-	secret      string
-	tokenTTL    time.Duration
+	log            *slog.Logger
+	Router         *mux.Router
+	userService    UserService
+	secret         string
+	authHandler    *handler.AuthHandlers
+	profileHandler *handler.ProfileHandler
+	linkHandler    *handler.LinkHandler
 }
 
 func New(log *slog.Logger, userService UserService, secret string, tokenTTL time.Duration) *server {
+	authHandler := handler.NewAuthHandlers(log, userService, secret, tokenTTL)
+	profileHandler := handler.NewProfileHandlers(log, userService)
+	linkHandler := handler.NewLinkHandlers(log, userService)
+
 	s := &server{
-		log:         log,
-		Router:      mux.NewRouter(),
-		userService: userService,
-		secret:      secret,
-		tokenTTL:    tokenTTL,
+		log:            log,
+		Router:         mux.NewRouter(),
+		secret:         secret,
+		userService:    userService,
+		authHandler:    authHandler,
+		profileHandler: profileHandler,
+		linkHandler:    linkHandler,
 	}
 
 	s.configureRouter()
@@ -50,44 +52,24 @@ func New(log *slog.Logger, userService UserService, secret string, tokenTTL time
 }
 
 func (s *server) configureRouter() {
-	s.Router.Use(s.setRequetID)
-	s.Router.Use(s.logRequest)
+	s.Router.Use(middleware.SetRequetID)
+	s.Router.Use(middleware.LogRequest(s.log))
 	s.Router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
 	//PUBLIC ROUTES
-	s.Router.HandleFunc("/api/auth/sign-up", s.handleSignUp()).Methods(http.MethodPost)
-	s.Router.HandleFunc("/api/auth/login", s.handleLogin()).Methods(http.MethodPost)
-	s.Router.HandleFunc("/health", s.checkHandler()).Methods(http.MethodGet)
+	s.Router.HandleFunc("/api/auth/sign-up", s.authHandler.HandleSignUp()).Methods(http.MethodPost)
+	s.Router.HandleFunc("/api/auth/login", s.authHandler.HandleLogin()).Methods(http.MethodPost)
 
 	//PUBLIC ROUTES
 	public := s.Router.PathPrefix("/api/profile").Subrouter()
-	public.HandleFunc("/{email}", s.handlerGetProfile()).Methods(http.MethodGet)
+	public.HandleFunc("/{email}", s.profileHandler.HandlerGetProfile()).Methods(http.MethodGet)
 
 	//PRIVATE ROUTES
 	private := s.Router.PathPrefix("/api/profile").Subrouter()
-	private.Use(s.authMiddleware) //auth middleware check and verified token
-	private.HandleFunc("", s.handlerMyProfle()).Methods(http.MethodGet)
-	// TODO:
+	private.Use(middleware.AuthMiddleware(s.log, s.secret)) //auth middleware check and verified token
+	private.HandleFunc("", s.profileHandler.HandlerMyProfle()).Methods(http.MethodGet)
 	//ABOUT
-	private.HandleFunc("/about", s.handlerUpdateAboutMe()).Methods(http.MethodPost)
+	private.HandleFunc("/about", s.profileHandler.HandlerUpdateAboutMe()).Methods(http.MethodPost)
 	//lINKS
-	private.HandleFunc("/link", s.handlerAddLink()).Methods(http.MethodPost)
-	private.HandleFunc("/link", s.handlerUpdateLink()).Methods(http.MethodPut)
-	private.HandleFunc("/link", s.handlerDeleteLink()).Methods(http.MethodDelete)
-}
-
-func (s *server) error(w http.ResponseWriter, code int, err error) {
-	s.respond(w, code, map[string]string{"error": err.Error()})
-}
-
-func (s *server) respond(w http.ResponseWriter, code int, data interface{}) {
-	if data != nil {
-		w.Header().Add("Content-Type", "application/json")
-	}
-
-	w.WriteHeader(code)
-
-	if data != nil {
-		json.NewEncoder(w).Encode(data)
-	}
+	private.HandleFunc("/link", s.linkHandler.HandlerLink()).Methods(http.MethodPost, http.MethodPut, http.MethodDelete)
 }

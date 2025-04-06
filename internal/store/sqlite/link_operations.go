@@ -6,6 +6,8 @@ import (
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func (s *Store) insertLink(userID int, link models.ReqLink) error {

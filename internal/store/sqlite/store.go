@@ -46,10 +46,12 @@ func (s *Store) CreateUser(email string, pass []byte) (*models.User, error) {
 }
 
 func (s *Store) User(email string) (*models.User, error) {
+	s.log.Debug("Email is DB layer:", slog.String("email", email))
 	rows, err := s.userRowsByEmail(email)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	u, err := s.scanUserRows(rows)
 	if err != nil {
@@ -64,6 +66,7 @@ func (s *Store) UserById(id int) (*models.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	u, err := s.scanUserRows(rows)
 	if err != nil {

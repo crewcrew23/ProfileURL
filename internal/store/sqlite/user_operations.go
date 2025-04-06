@@ -8,6 +8,8 @@ import (
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func (s *Store) insertUser(email string, pass []byte) (int64, error) {
@@ -68,20 +70,15 @@ func (s *Store) createdUser(userID int64) (*models.User, error) {
 }
 
 func (s *Store) userRowsByEmail(email string) (*sql.Rows, error) {
-	rows, err := s.db.Query(`
-        SELECT 
-            u.id, u.email, u.pass_hash, u.about_text,
-            l.id, l.user_id, l.link_name, l.link_color,l.link_path
-        FROM users u 
-        LEFT JOIN links l ON u.id = l.user_id
-        WHERE u.email = ?
-    `, email)
+	query := "SELECT u.id, u.email, u.pass_hash, u.about_text, l.id, l.user_id, l.link_name, l.link_color,l.link_path FROM users u LEFT JOIN links l ON u.id = l.user_id WHERE u.email = ?"
+
+	rows, err := s.db.Query(query, email)
+	s.log.Debug("Query", slog.String("Q", query), slog.String("email", email))
 	if err != nil {
 		s.log.Error("failed to query user data",
 			slog.String("error", err.Error()))
 		return nil, fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
 	}
-	defer rows.Close()
 
 	return rows, nil
 }
@@ -100,7 +97,6 @@ func (s *Store) userRowsByID(id int) (*sql.Rows, error) {
 			slog.String("error", err.Error()))
 		return nil, fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
 	}
-	defer rows.Close()
 
 	return rows, nil
 }
@@ -135,7 +131,7 @@ func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 			var discardID int
 			var discardEmail, discardAboutText string
 			err := rows.Scan(
-				&discardID, &discardEmail, &discardAboutText,
+				&discardID, &discardEmail, &user.HashedPassword, &discardAboutText,
 				&linkID, &linkUserID, &linkName, &linkColor, &linkPath,
 			)
 			if err != nil {
@@ -162,6 +158,7 @@ func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 		return nil, fmt.Errorf("%w: rows iteration failed", store.ErrDatabaseOperation)
 	}
 
+	s.log.Debug("User on DB", slog.Any("data:", user))
 	if !userFound {
 		s.log.Debug("user not found")
 		return nil, store.ErrUserNotFound
