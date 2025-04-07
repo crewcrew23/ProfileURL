@@ -21,5 +21,5 @@ func Start(cfg config.Config, logger *slog.Logger) error {
 	fmt.Printf("Parsed duration: %v\n", duration)
 	router := transport.NewRouter(logger, authService, cfg.Secret, duration)
 
-	return http.ListenAndServe(cfg.Addr, router) // TODO: configure TLS
+	return http.ListenAndServe(cfg.Addr, router) // TODO: configure TLS: need white ip, so we'll wait
 }

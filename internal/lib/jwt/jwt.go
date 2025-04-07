@@ -48,6 +48,9 @@ func ParseAndVerify(tokenString string, secret string) (*Claims, error) {
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
+			return nil, jwt.ErrTokenExpired
+		}
 		return claims, nil
 	}
 

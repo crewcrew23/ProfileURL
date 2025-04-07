@@ -2,6 +2,9 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	jwt_go "github.com/golang-jwt/jwt/v5"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -63,6 +66,16 @@ func AuthMiddleware(log *slog.Logger, secret string) func(http.Handler) http.Han
 
 			claims, err := jwt.ParseAndVerify(headerAuth[1], secret)
 			if err != nil {
+
+				if errors.Is(err, jwt_go.ErrTokenExpired) {
+					log.Debug("Token expired")
+					json.NewEncoder(w).Encode(map[string]string{
+						"error": "token expired",
+					})
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+
 				log.Debug("Failed Parse Token: ", slog.String("error", err.Error()))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
