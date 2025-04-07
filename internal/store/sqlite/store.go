@@ -84,7 +84,7 @@ func (s *Store) UserByUsername(name string) (*models.User, error) {
 	}
 	defer rows.Close()
 
-	u, err := s.scanUserRows(rows)
+	u, err := s.scanUserRowsByUsername(rows)
 	if err != nil {
 		return nil, err
 	}

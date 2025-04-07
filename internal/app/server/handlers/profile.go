@@ -60,11 +60,17 @@ func (h *ProfileHandler) HandlerMyProfile() http.HandlerFunc {
 }
 
 func (h *ProfileHandler) HandlerGetProfile() http.HandlerFunc {
+	//TODO: move to separate package struct below
+	type LinkView struct {
+		LinkName  string `json:"link_name"`
+		LinkColor string `json:"link_color"`
+		LinkPath  string `json:"link_path"`
+	}
 
 	type UserView struct {
-		Username  string        `json:"username"`
-		AboutText string        `json:"about"`
-		Links     []models.Link `json:"links"`
+		Username  string     `json:"username"`
+		AboutText string     `json:"about"`
+		Links     []LinkView `json:"links"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -89,11 +95,20 @@ func (h *ProfileHandler) HandlerGetProfile() http.HandlerFunc {
 			return
 		}
 
-		uv := &UserView{}
+		links := make([]LinkView, 0, len(u.Links))
+		for _, l := range u.Links {
+			links = append(links, LinkView{
+				LinkName:  l.LinkName,
+				LinkColor: l.LinkColor,
+				LinkPath:  l.LinkPath,
+			})
+		}
 
-		uv.Username = u.Username
-		uv.AboutText = u.AboutText
-		uv.Links = u.Links
+		uv := &UserView{
+			Username:  u.Username,
+			AboutText: u.AboutText,
+			Links:     links,
+		}
 
 		respond(w, http.StatusOK, uv)
 	}

@@ -173,6 +173,67 @@ func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 	return &user, nil
 }
 
+func (s *Store) scanUserRowsByUsername(rows *sql.Rows) (*models.User, error) {
+	var user models.User
+	var links []models.Link
+	userFound := false
+
+	for rows.Next() {
+		var (
+			id        int
+			email     string
+			username  string
+			passHash  string
+			aboutText string
+			linkName  sql.NullString
+			linkColor sql.NullString
+			linkPath  sql.NullString
+		)
+
+		err := rows.Scan(
+			&id, &email, &username, &passHash, &aboutText,
+			&linkName, &linkColor, &linkPath,
+		)
+		if err != nil {
+			s.log.Error("failed to scan row", slog.String("error", err.Error()))
+			return nil, fmt.Errorf("%w: failed to scan user data", store.ErrDataScanFailed)
+		}
+
+		if !userFound {
+			user = models.User{
+				ID:             id,
+				Email:          email,
+				Username:       username,
+				HashedPassword: []byte(passHash),
+				AboutText:      aboutText,
+			}
+			userFound = true
+		}
+
+		if linkName.Valid || linkColor.Valid || linkPath.Valid {
+			links = append(links, models.Link{
+				LinkName:  linkName.String,
+				LinkColor: linkColor.String,
+				LinkPath:  linkPath.String,
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		s.log.Error("rows iteration error", slog.String("error", err.Error()))
+		return nil, fmt.Errorf("%w: rows iteration failed", store.ErrDatabaseOperation)
+	}
+
+	if !userFound {
+		s.log.Debug("user not found")
+		return nil, store.ErrUserNotFound
+	}
+
+	user.Links = links
+	s.log.Debug("User from DB", slog.Any("data", user))
+	return &user, nil
+}
+
 func (s *Store) updateAboutMe(id int, text string) (sql.Result, error) {
 	stmt, err := s.db.Prepare(query.UpdateAboutMe)
 	if err != nil {

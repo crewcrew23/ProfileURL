@@ -24,7 +24,7 @@ const (
 	UsersRowsByUsername = `
 		SELECT 
 			u.id, u.email, u.username, u.pass_hash, u.about_text,
-			l.id, l.user_id, l.link_name, l.link_color, l.link_path
+			l.link_name, l.link_color, l.link_path
 		FROM users u
 		LEFT JOIN links l ON u.id = l.user_id
 		WHERE u.username = ?`
