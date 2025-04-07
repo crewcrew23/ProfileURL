@@ -81,6 +81,7 @@ POST - ``` api/auth/sign-up ``` <br>
 ```
 {
     "email":"test@gmail.com",
+    "login":"login",
     "password":"123456"
 }
 
@@ -102,7 +103,7 @@ POST - ``` api/auth/login ``` <br>
 Вернут 200 и Header Token с JWT при успегном логине пользователя или ошибку <br>
 
 ## Получение профиля другого пользователя
-GET - ``` api/profile/{email} ``` <br>
+GET - ``` api/profile/{username} ``` <br>
 аутентификация - не требуется <br>
 Вернут 200 и пользователя если такой есть или ошибку <br>
 
