@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"url_profile/internal/app/server/handlers/requestModel"
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 
@@ -19,8 +20,8 @@ type UserProvider interface {
 	User(email string) (*models.User, error)
 	UserById(id int) (*models.User, error)
 	UpdateAboutMe(id int, text string) error
-	AddLink(userID int, link models.ReqLink) error
-	UpdateLink(userID int, link *models.ReqUpdateLink) error
+	AddLink(userID int, link requestModel.ReqLink) error
+	UpdateLink(userID int, link *requestModel.ReqUpdateLink) error
 	DeleteLink(userID int, linkID int) error
 }
 
@@ -98,7 +99,7 @@ func (a *AuthService) UpdateAboutMe(id int, text string) error {
 	return nil
 }
 
-func (a *AuthService) AddLink(userID int, link models.ReqLink) error {
+func (a *AuthService) AddLink(userID int, link requestModel.ReqLink) error {
 	if err := a.userProvider.AddLink(userID, link); err != nil {
 		a.log.Debug("Failet to save link", slog.String("error", err.Error()))
 		return err
@@ -107,7 +108,7 @@ func (a *AuthService) AddLink(userID int, link models.ReqLink) error {
 	return nil
 }
 
-func (a *AuthService) UpdateLink(userID int, link *models.ReqUpdateLink) error {
+func (a *AuthService) UpdateLink(userID int, link *requestModel.ReqUpdateLink) error {
 	if err := a.userProvider.UpdateLink(userID, link); err != nil {
 		return err
 	}

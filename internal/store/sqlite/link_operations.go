@@ -3,7 +3,7 @@ package sqlitestore
 import (
 	"fmt"
 	"log/slog"
-	"url_profile/internal/domain/models"
+	"url_profile/internal/app/server/handlers/requestModel"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
 	"url_profile/internal/store/sqlite/query"
@@ -11,7 +11,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func (s *Store) insertLink(userID int, link models.ReqLink) error {
+func (s *Store) insertLink(userID int, link requestModel.ReqLink) error {
 	stmt, err := s.db.Prepare(query.InsertLink)
 	if err != nil {
 		s.log.Error("failed to prepare update statement",
@@ -69,7 +69,7 @@ func (s *Store) existsLink(userID int, linkID int) error {
 	return nil
 }
 
-func (s *Store) updateLink(userID int, link *models.ReqUpdateLink) error {
+func (s *Store) updateLink(userID int, link *requestModel.ReqUpdateLink) error {
 	stmt, err := s.db.Prepare(query.UpdateLink)
 	if err != nil {
 		s.log.Error("failed to prepare update statement",

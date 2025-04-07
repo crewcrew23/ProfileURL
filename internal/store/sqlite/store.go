@@ -3,6 +3,7 @@ package sqlitestore
 import (
 	"database/sql"
 	"log/slog"
+	"url_profile/internal/app/server/handlers/requestModel"
 	"url_profile/internal/domain/models"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -89,7 +90,7 @@ func (s *Store) UpdateAboutMe(id int, text string) error {
 	return nil
 }
 
-func (s *Store) AddLink(userID int, link models.ReqLink) error {
+func (s *Store) AddLink(userID int, link requestModel.ReqLink) error {
 	if err := s.insertLink(userID, link); err != nil {
 		return err
 	}
@@ -97,7 +98,7 @@ func (s *Store) AddLink(userID int, link models.ReqLink) error {
 	return nil
 }
 
-func (s *Store) UpdateLink(userID int, link *models.ReqUpdateLink) error {
+func (s *Store) UpdateLink(userID int, link *requestModel.ReqUpdateLink) error {
 
 	if err := s.existsLink(userID, link.LinkID); err != nil {
 		return err

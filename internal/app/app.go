@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-	"url_profile/internal/app/server"
+	transport "url_profile/internal/app/server/transporter/http"
 	"url_profile/internal/config"
 	authservice "url_profile/internal/services/auth"
 	sqlitestore "url_profile/internal/store/sqlite"
@@ -19,7 +19,7 @@ func Start(cfg config.Config, logger *slog.Logger) error {
 		panic(fmt.Errorf("failed to parse TokenTTL: %w", err))
 	}
 	fmt.Printf("Parsed duration: %v\n", duration)
-	srv := server.New(logger, authService, cfg.Secret, duration)
+	router := transport.NewRouter(logger, authService, cfg.Secret, duration)
 
-	return http.ListenAndServe(cfg.Addr, srv.Router) // TODO: configure TLS
+	return http.ListenAndServe(cfg.Addr, router) // TODO: configure TLS
 }

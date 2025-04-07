@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	consts "url_profile/internal/app/server/constants"
-	"url_profile/internal/domain/models"
+	"url_profile/internal/app/server/handlers/requestModel"
 	"url_profile/internal/store"
 )
 
@@ -43,7 +43,7 @@ func (h *LinkHandler) HandlerLink() http.HandlerFunc {
 func (s *LinkHandler) handlerAddLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value(consts.CtxUserIdKey).(int)
-		var links []models.ReqLink
+		var links []requestModel.ReqLink
 		if err := json.NewDecoder(r.Body).Decode(&links); err != nil {
 			sendError(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
 			return
@@ -79,7 +79,7 @@ func (s *LinkHandler) handlerAddLink() http.HandlerFunc {
 func (h *LinkHandler) handlerUpdateLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value(consts.CtxUserIdKey).(int)
-		link := &models.ReqUpdateLink{}
+		link := &requestModel.ReqUpdateLink{}
 		if err := json.NewDecoder(r.Body).Decode(&link); err != nil {
 			sendError(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
 			return

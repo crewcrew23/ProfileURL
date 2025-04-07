@@ -1,4 +1,4 @@
-package handler
+package serviceinterface
 
 import (
 	"url_profile/internal/app/server/handlers/requestModel"

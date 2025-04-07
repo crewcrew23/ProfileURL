@@ -40,6 +40,7 @@ func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
 		req := &request{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			h.log.Debug("Failed to parse", slog.String("err", err.Error()))
 			sendError(w, http.StatusBadRequest, err)
 			return
 		}
