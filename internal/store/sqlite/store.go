@@ -32,8 +32,8 @@ func New(dbPath string, log *slog.Logger) *Store {
 	}
 }
 
-func (s *Store) CreateUser(email string, pass []byte) (*models.User, error) {
-	userID, err := s.insertUser(email, pass)
+func (s *Store) CreateUser(email string, username string, pass []byte) (*models.User, error) {
+	userID, err := s.insertUser(email, username, pass)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +64,21 @@ func (s *Store) User(email string) (*models.User, error) {
 
 func (s *Store) UserById(id int) (*models.User, error) {
 	rows, err := s.userRowsByID(id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	u, err := s.scanUserRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (s *Store) UserByUsername(name string) (*models.User, error) {
+	rows, err := s.userRowsByUsername(name)
 	if err != nil {
 		return nil, err
 	}

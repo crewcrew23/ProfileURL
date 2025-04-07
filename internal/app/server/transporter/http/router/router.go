@@ -18,7 +18,7 @@ func New(
 
 	r := mux.NewRouter()
 
-	r.Use(middleware.SetRequetID)
+	r.Use(middleware.SetRequestID)
 	r.Use(middleware.LogRequest(log))
 	r.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
@@ -28,12 +28,12 @@ func New(
 
 	//PUBLIC ROUTES
 	public := r.PathPrefix("/api/profile").Subrouter()
-	public.HandleFunc("/{email}", profileHandler.HandlerGetProfile()).Methods(http.MethodGet)
+	public.HandleFunc("/{username}", profileHandler.HandlerGetProfile()).Methods(http.MethodGet)
 
 	//PRIVATE ROUTES
 	private := r.PathPrefix("/api/profile").Subrouter()
 	private.Use(middleware.AuthMiddleware(log, secret)) //auth middleware check and verified token
-	private.HandleFunc("", profileHandler.HandlerMyProfle()).Methods(http.MethodGet)
+	private.HandleFunc("", profileHandler.HandlerMyProfile()).Methods(http.MethodGet)
 	//ABOUT
 	private.HandleFunc("/about", profileHandler.HandlerUpdateAboutMe()).Methods(http.MethodPost)
 	//lINKS

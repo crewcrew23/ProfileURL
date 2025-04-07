@@ -13,12 +13,13 @@ import (
 )
 
 type UserSaver interface {
-	CreateUser(email string, pass []byte) (*models.User, error)
+	CreateUser(email string, username string, pass []byte) (*models.User, error)
 }
 
 type UserProvider interface {
 	User(email string) (*models.User, error)
 	UserById(id int) (*models.User, error)
+	UserByUsername(name string) (*models.User, error)
 	UpdateAboutMe(id int, text string) error
 	AddLink(userID int, link requestModel.ReqLink) error
 	UpdateLink(userID int, link *requestModel.ReqUpdateLink) error
@@ -39,9 +40,14 @@ func New(log *slog.Logger, userSaver UserSaver, userProvider UserProvider) *Auth
 	}
 }
 
-func (a *AuthService) CreateUser(email string, password string) (int, *models.User, error) {
+func (a *AuthService) CreateUser(email string, username string, password string) (int, *models.User, error) {
+	//TODO: need refactor
 	if _, err := a.userProvider.User(email); err != store.ErrUserNotFound {
 		return http.StatusConflict, nil, fmt.Errorf("user with email %s already exists", email)
+	}
+
+	if _, err := a.userProvider.UserByUsername(username); err != store.ErrUserNotFound {
+		return http.StatusConflict, nil, fmt.Errorf("user with username %s already exists", username)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -50,7 +56,7 @@ func (a *AuthService) CreateUser(email string, password string) (int, *models.Us
 		return http.StatusInternalServerError, nil, err
 	}
 
-	u, err := a.userSaver.CreateUser(email, hash)
+	u, err := a.userSaver.CreateUser(email, username, hash)
 	if err != nil {
 		if errors.Is(err, store.ErrUserAlreadyExists) {
 			return http.StatusConflict, nil, store.ErrUserAlreadyExists
@@ -81,6 +87,19 @@ func (a *AuthService) User(email string) (*models.User, error) {
 
 func (a *AuthService) UserById(id int) (*models.User, error) {
 	u, err := a.userProvider.UserById(id)
+	if err != nil {
+		if errors.Is(err, store.ErrUserNotFound) {
+			return nil, store.ErrUserNotFound
+		}
+
+		return nil, store.ErrDatabaseOperation
+	}
+
+	return u, nil
+}
+
+func (a *AuthService) UserByUsername(name string) (*models.User, error) {
+	u, err := a.userProvider.UserByUsername(name)
 	if err != nil {
 		if errors.Is(err, store.ErrUserNotFound) {
 			return nil, store.ErrUserNotFound

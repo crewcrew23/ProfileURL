@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func SetRequetID(next http.Handler) http.Handler {
+func SetRequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := uuid.New().String()
 		w.Header().Set("X-REQUEST-ID", id)

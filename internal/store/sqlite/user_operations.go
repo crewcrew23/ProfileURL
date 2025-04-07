@@ -13,7 +13,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func (s *Store) insertUser(email string, pass []byte) (int64, error) {
+func (s *Store) insertUser(email string, username string, pass []byte) (int64, error) {
 
 	stmt, err := s.db.Prepare(query.InsertUser)
 	if err != nil {
@@ -22,7 +22,7 @@ func (s *Store) insertUser(email string, pass []byte) (int64, error) {
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(email, pass)
+	res, err := stmt.Exec(email, username, pass)
 	if err != nil {
 		if errshandle.IsDuplicateKeyError(err) {
 			s.log.Error("User Already Exists", slog.String("err", err.Error()))
@@ -51,6 +51,7 @@ func (s *Store) createdUser(userID int64) (*models.User, error) {
 	u := &models.User{}
 	err := s.db.QueryRow(query.CreatedUser, userID).Scan(
 		&u.ID,
+		&u.Username,
 		&u.Email,
 	)
 
@@ -94,6 +95,17 @@ func (s *Store) userRowsByID(id int) (*sql.Rows, error) {
 	return rows, nil
 }
 
+func (s *Store) userRowsByUsername(name string) (*sql.Rows, error) {
+	rows, err := s.db.Query(query.UsersRowsByUsername, name)
+	if err != nil {
+		s.log.Error("failed to query user data",
+			slog.String("error", err.Error()))
+		return nil, fmt.Errorf("%w: %v", store.ErrDatabaseOperation, err)
+	}
+
+	return rows, nil
+}
+
 func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 	var user models.User
 	var links []models.Link
@@ -111,7 +123,7 @@ func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 
 		if !userFound {
 			err := rows.Scan(
-				&user.ID, &user.Email, &user.HashedPassword, &user.AboutText,
+				&user.ID, &user.Email, &user.Username, &user.HashedPassword, &user.AboutText,
 				&linkID, &linkUserID, &linkName, &linkColor, &linkPath,
 			)
 			if err != nil {
@@ -122,9 +134,9 @@ func (s *Store) scanUserRows(rows *sql.Rows) (*models.User, error) {
 			userFound = true
 		} else {
 			var discardID int
-			var discardEmail, discardAboutText string
+			var discardEmail, discardUsername, discardAboutText string
 			err := rows.Scan(
-				&discardID, &discardEmail, &user.HashedPassword, &discardAboutText,
+				&discardID, &discardEmail, &discardUsername, &user.HashedPassword, &discardAboutText,
 				&linkID, &linkUserID, &linkName, &linkColor, &linkPath,
 			)
 			if err != nil {

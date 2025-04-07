@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 	handler "url_profile/internal/app/server/handlers"
-	"url_profile/internal/app/server/router"
+	"url_profile/internal/app/server/transporter/http/router"
 	serviceinterface "url_profile/internal/app/server/transporter/interfaces/service"
 )
 

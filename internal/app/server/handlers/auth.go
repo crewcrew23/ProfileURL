@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"regexp"
 	"time"
+	"url_profile/internal/app/server/handlers/requestModel"
 	"url_profile/internal/lib/jwt"
 	"url_profile/internal/store"
 
@@ -31,13 +31,9 @@ func NewAuthHandlers(log *slog.Logger, service UserService, secret string, token
 }
 
 func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := &request{}
+		req := &requestModel.SignUpModel{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			h.log.Debug("Failed to parse", slog.String("err", err.Error()))
@@ -57,12 +53,13 @@ func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
 			return
 		}
 
-		if !isValidEmail(req.Email) {
-			sendError(w, http.StatusBadRequest, fmt.Errorf("invalid email"))
+		if err := req.Validate(); err != nil {
+			h.log.Debug("Invalid validate", slog.String("err", err.Error()))
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		code, u, err := h.service.CreateUser(req.Email, req.Password)
+		code, u, err := h.service.CreateUser(req.Email, req.Username, req.Password)
 		if err != nil {
 			if code == http.StatusConflict {
 				sendError(w, http.StatusConflict, fmt.Errorf("user with email %s already exists", req.Email))
@@ -86,13 +83,9 @@ func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
 }
 
 func (h *AuthHandlers) HandleLogin() http.HandlerFunc {
-	type request struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := &request{}
+		req := &requestModel.LoginModel{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			h.log.Debug("DECODE ERROR:", slog.String("err", err.Error()))
@@ -133,10 +126,4 @@ func (h *AuthHandlers) HandleLogin() http.HandlerFunc {
 		w.Header().Set("token", token)
 		respond(w, http.StatusOK, nil)
 	}
-}
-
-func isValidEmail(email string) bool {
-	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	match, _ := regexp.MatchString(emailRegex, email)
-	return match
 }

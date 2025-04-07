@@ -25,9 +25,10 @@ func NewProfileHandlers(log *slog.Logger, service UserService) *ProfileHandler {
 	}
 }
 
-func (h *ProfileHandler) HandlerMyProfle() http.HandlerFunc {
+func (h *ProfileHandler) HandlerMyProfile() http.HandlerFunc {
 	type UserView struct {
 		Email     string        `json:"email"`
+		Username  string        `json:"username"`
 		AboutText string        `json:"about"`
 		Links     []models.Link `json:"links"`
 	}
@@ -50,6 +51,7 @@ func (h *ProfileHandler) HandlerMyProfle() http.HandlerFunc {
 		h.log.Debug("User", slog.Any("data", u))
 
 		uv.Email = u.Email
+		uv.Username = u.Username
 		uv.AboutText = u.AboutText
 		uv.Links = u.Links
 
@@ -60,21 +62,21 @@ func (h *ProfileHandler) HandlerMyProfle() http.HandlerFunc {
 func (h *ProfileHandler) HandlerGetProfile() http.HandlerFunc {
 
 	type UserView struct {
-		Email     string        `json:"email"`
+		Username  string        `json:"username"`
 		AboutText string        `json:"about"`
 		Links     []models.Link `json:"links"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		email := vars["email"]
+		username := vars["username"]
 
-		if email == "" {
-			sendError(w, http.StatusBadRequest, fmt.Errorf("email is required"))
+		if username == "" {
+			sendError(w, http.StatusBadRequest, fmt.Errorf("username is required"))
 			return
 		}
 
-		u, err := h.service.User(email)
+		u, err := h.service.UserByUsername(username)
 		if err != nil {
 			if errors.Is(err, store.ErrUserNotFound) {
 				h.log.Debug("Find User Return Error:", slog.String("err", err.Error()))
@@ -89,7 +91,7 @@ func (h *ProfileHandler) HandlerGetProfile() http.HandlerFunc {
 
 		uv := &UserView{}
 
-		uv.Email = u.Email
+		uv.Username = u.Username
 		uv.AboutText = u.AboutText
 		uv.Links = u.Links
 
