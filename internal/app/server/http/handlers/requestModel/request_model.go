@@ -38,6 +38,10 @@ func (sm *SignUpModel) Validate() error {
 		return fmt.Errorf("invalid login")
 	}
 
+	if ok := isValidPassword(sm.Password); !ok {
+		return fmt.Errorf("invalid password")
+	}
+
 	return nil
 }
 
@@ -51,3 +55,10 @@ func isValidUsername(username string) bool {
 	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_]{3,20}$`, username)
 	return matched
 }
+
+func isValidPassword(password string) bool {
+	res := len(password) < 6
+	return !res
+}
+
+

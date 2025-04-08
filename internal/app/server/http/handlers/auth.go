@@ -43,11 +43,6 @@ func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
 
 		h.log.Debug("ReqUserData:", slog.Any("Data", req))
 
-		if req.Email == "" {
-			sendError(w, http.StatusBadRequest, fmt.Errorf("email is required"))
-			return
-		}
-
 		if len(req.Password) < 6 {
 			sendError(w, http.StatusBadRequest, fmt.Errorf("password cannot be less than 6 characters"))
 			return
