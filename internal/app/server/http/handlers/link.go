@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	consts "url_profile/internal/app/server/constants"
-	"url_profile/internal/app/server/handlers/requestModel"
+	"url_profile/internal/app/server/http/constants"
+	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/store"
 )
 

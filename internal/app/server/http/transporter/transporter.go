@@ -1,12 +1,12 @@
-package http
+package transporter
 
 import (
 	"github.com/gorilla/mux"
 	"log/slog"
 	"time"
-	handler "url_profile/internal/app/server/handlers"
-	"url_profile/internal/app/server/transporter/http/router"
-	serviceinterface "url_profile/internal/app/server/transporter/interfaces/service"
+	"url_profile/internal/app/server/http/handlers"
+	serviceinterface "url_profile/internal/app/server/http/transporter/interfaces/service"
+	"url_profile/internal/app/server/http/transporter/router"
 )
 
 func NewRouter(log *slog.Logger, userService serviceinterface.UserService, secret string, tokenTTL time.Duration) *mux.Router {

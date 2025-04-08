@@ -3,7 +3,7 @@ package sqlitestore
 import (
 	"fmt"
 	"log/slog"
-	"url_profile/internal/app/server/handlers/requestModel"
+	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
 	"url_profile/internal/store/sqlite/query"

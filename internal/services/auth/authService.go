@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"url_profile/internal/app/server/handlers/requestModel"
+	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 
@@ -41,7 +41,6 @@ func New(log *slog.Logger, userSaver UserSaver, userProvider UserProvider) *Auth
 }
 
 func (a *AuthService) CreateUser(email string, username string, password string) (int, *models.User, error) {
-	//TODO: need refactor
 	if _, err := a.userProvider.User(email); err != store.ErrUserNotFound {
 		return http.StatusConflict, nil, fmt.Errorf("user with email %s already exists", email)
 	}

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	consts "url_profile/internal/app/server/constants"
+	"url_profile/internal/app/server/http/constants"
 	"url_profile/internal/lib/jwt"
 
 	"github.com/google/uuid"

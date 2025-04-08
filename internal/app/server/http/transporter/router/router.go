@@ -5,8 +5,8 @@ import (
 	"github.com/gorilla/mux"
 	"log/slog"
 	"net/http"
-	handler "url_profile/internal/app/server/handlers"
-	"url_profile/internal/app/server/middleware"
+	"url_profile/internal/app/server/http/handlers"
+	"url_profile/internal/app/server/http/middleware"
 )
 
 func New(

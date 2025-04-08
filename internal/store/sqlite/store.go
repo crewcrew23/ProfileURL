@@ -3,7 +3,7 @@ package sqlitestore
 import (
 	"database/sql"
 	"log/slog"
-	"url_profile/internal/app/server/handlers/requestModel"
+	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/domain/models"
 
 	_ "github.com/mattn/go-sqlite3"

@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-	"url_profile/internal/app/server/handlers/requestModel"
+	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/lib/jwt"
 	"url_profile/internal/store"
 

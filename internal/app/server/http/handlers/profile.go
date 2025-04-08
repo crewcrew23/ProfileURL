@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	consts "url_profile/internal/app/server/constants"
+	"url_profile/internal/app/server/http/constants"
+	"url_profile/internal/app/server/http/handlers/viewModel"
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 
@@ -60,19 +61,6 @@ func (h *ProfileHandler) HandlerMyProfile() http.HandlerFunc {
 }
 
 func (h *ProfileHandler) HandlerGetProfile() http.HandlerFunc {
-	//TODO: move to separate package struct below
-	type LinkView struct {
-		LinkName  string `json:"link_name"`
-		LinkColor string `json:"link_color"`
-		LinkPath  string `json:"link_path"`
-	}
-
-	type UserView struct {
-		Username  string     `json:"username"`
-		AboutText string     `json:"about"`
-		Links     []LinkView `json:"links"`
-	}
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username := vars["username"]
@@ -95,16 +83,16 @@ func (h *ProfileHandler) HandlerGetProfile() http.HandlerFunc {
 			return
 		}
 
-		links := make([]LinkView, 0, len(u.Links))
+		links := make([]viewModel.LinkView, 0, len(u.Links))
 		for _, l := range u.Links {
-			links = append(links, LinkView{
+			links = append(links, viewModel.LinkView{
 				LinkName:  l.LinkName,
 				LinkColor: l.LinkColor,
 				LinkPath:  l.LinkPath,
 			})
 		}
 
-		uv := &UserView{
+		uv := &viewModel.UserView{
 			Username:  u.Username,
 			AboutText: u.AboutText,
 			Links:     links,
