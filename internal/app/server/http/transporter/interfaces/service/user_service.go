@@ -6,7 +6,7 @@ import (
 )
 
 type UserService interface {
-	CreateUser(email string, username string, password string) (code int, user *models.User, err error)
+	CreateUser(model *requestModel.SignUpModel) (code int, user *models.User, err error)
 	User(email string) (*models.User, error)
 	UserById(id int) (*models.User, error)
 	UserByUsername(name string) (*models.User, error)

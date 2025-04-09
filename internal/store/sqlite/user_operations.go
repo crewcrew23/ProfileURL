@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/domain/models"
 	"url_profile/internal/store"
 	errshandle "url_profile/internal/store/sqlite/errs"
@@ -13,7 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func (s *Store) insertUser(email string, username string, pass []byte) (int64, error) {
+func (s *Store) insertUser(email string, username string, pass []byte, about string, links []requestModel.ReqLink) (int64, error) {
 
 	stmt, err := s.db.Prepare(query.InsertUser)
 	if err != nil {
@@ -22,7 +23,7 @@ func (s *Store) insertUser(email string, username string, pass []byte) (int64, e
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(email, username, pass)
+	res, err := stmt.Exec(email, username, pass, about)
 	if err != nil {
 		if errshandle.IsDuplicateKeyError(err) {
 			s.log.Error("User Already Exists", slog.String("err", err.Error()))
@@ -43,6 +44,12 @@ func (s *Store) insertUser(email string, username string, pass []byte) (int64, e
 	s.log.Debug("user created",
 		slog.Int64("user_id", userID),
 		slog.String("email", email))
+
+	if len(links) > 0 {
+		for _, l := range links {
+			s.insertLink(int(userID), l)
+		}
+	}
 
 	return userID, nil
 }

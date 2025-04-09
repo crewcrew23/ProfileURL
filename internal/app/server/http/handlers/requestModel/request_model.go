@@ -19,9 +19,11 @@ type ReqUpdateLink struct {
 }
 
 type SignUpModel struct {
-	Email    string `json:"email"`
-	Username string `json:"login"`
-	Password string `json:"password"`
+	Email    string    `json:"email"`
+	Username string    `json:"login"`
+	Password string    `json:"password"`
+	About    string    `json:"about_me"`
+	Links    []ReqLink `json:"links"`
 }
 
 type LoginModel struct {
@@ -60,5 +62,3 @@ func isValidPassword(password string) bool {
 	res := len(password) < 6
 	return !res
 }
-
-

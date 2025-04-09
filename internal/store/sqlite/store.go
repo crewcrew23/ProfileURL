@@ -32,8 +32,8 @@ func New(dbPath string, log *slog.Logger) *Store {
 	}
 }
 
-func (s *Store) CreateUser(email string, username string, pass []byte) (*models.User, error) {
-	userID, err := s.insertUser(email, username, pass)
+func (s *Store) CreateUser(email string, username string, pass []byte, about string, links []requestModel.ReqLink) (*models.User, error) {
+	userID, err := s.insertUser(email, username, pass, about, links)
 	if err != nil {
 		return nil, err
 	}

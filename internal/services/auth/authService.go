@@ -13,7 +13,7 @@ import (
 )
 
 type UserSaver interface {
-	CreateUser(email string, username string, pass []byte) (*models.User, error)
+	CreateUser(email string, username string, pass []byte, about string, links []requestModel.ReqLink) (*models.User, error)
 }
 
 type UserProvider interface {
@@ -40,22 +40,22 @@ func New(log *slog.Logger, userSaver UserSaver, userProvider UserProvider) *Auth
 	}
 }
 
-func (a *AuthService) CreateUser(email string, username string, password string) (int, *models.User, error) {
-	if _, err := a.userProvider.User(email); err != store.ErrUserNotFound {
-		return http.StatusConflict, nil, fmt.Errorf("user with email %s already exists", email)
+func (a *AuthService) CreateUser(user *requestModel.SignUpModel) (int, *models.User, error) {
+	if _, err := a.userProvider.User(user.Email); err != store.ErrUserNotFound {
+		return http.StatusConflict, nil, fmt.Errorf("user with email %s already exists", user.Email)
 	}
 
-	if _, err := a.userProvider.UserByUsername(username); err != store.ErrUserNotFound {
-		return http.StatusConflict, nil, fmt.Errorf("user with username %s already exists", username)
+	if _, err := a.userProvider.UserByUsername(user.Username); err != store.ErrUserNotFound {
+		return http.StatusConflict, nil, fmt.Errorf("user with username %s already exists", user.Username)
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		a.log.Info("error from bcrypt", slog.String("err", err.Error()))
 		return http.StatusInternalServerError, nil, err
 	}
 
-	u, err := a.userSaver.CreateUser(email, username, hash)
+	u, err := a.userSaver.CreateUser(user.Email, user.Username, hash, user.About, user.Links)
 	if err != nil {
 		if errors.Is(err, store.ErrUserAlreadyExists) {
 			return http.StatusConflict, nil, store.ErrUserAlreadyExists

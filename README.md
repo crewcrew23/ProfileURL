@@ -80,12 +80,28 @@ POST - ``` api/auth/sign-up ``` <br>
 Принемает json : <br>
 ```
 {
+   {
     "email":"test@gmail.com",
     "login":"login",
-    "password":"123456"
+    "about_me":"ya vasya",
+    "links":[
+        {
+            "link_name":"link_name",
+            "link_color":"#color",
+            "link_path":"path_to_link"
+        },
+        {
+            "link_name":"link_name1",
+            "link_color":"#color1",
+            "link_path":"path_to_link1"
+        }
+],
+    "password":"password"
 }
-
+}
 ```
+- links (not required)
+- other field is required
 
 Вернут 201 и Header Token с JWT при успегном создании пользователя или ошибку <br>
 

@@ -1,7 +1,7 @@
 package query
 
 const (
-	InsertUser = "INSERT INTO users (email, username, pass_hash) VALUES($1, $2, $3) RETURNING id"
+	InsertUser = "INSERT INTO users (email, username, pass_hash, about_text) VALUES($1, $2, $3, $4) RETURNING id"
 
 	CreatedUser = "SELECT id, email, username FROM users WHERE id = ?"
 

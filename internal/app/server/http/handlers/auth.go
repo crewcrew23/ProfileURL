@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 	"url_profile/internal/app/server/http/handlers/requestModel"
 	"url_profile/internal/lib/jwt"
@@ -33,6 +34,7 @@ func NewAuthHandlers(log *slog.Logger, service UserService, secret string, token
 func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		validLinks := make([]requestModel.ReqLink, 0)
 		req := &requestModel.SignUpModel{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
@@ -54,10 +56,17 @@ func (h *AuthHandlers) HandleSignUp() http.HandlerFunc {
 			return
 		}
 
-		code, u, err := h.service.CreateUser(req.Email, req.Username, req.Password)
+		for _, l := range req.Links {
+			if strings.Trim(l.LinkName, " ") != "" && strings.Trim(l.LinkPath, " ") != "" {
+				validLinks = append(validLinks, l)
+			}
+		}
+
+		req.Links = validLinks
+		code, u, err := h.service.CreateUser(req)
 		if err != nil {
 			if code == http.StatusConflict {
-				sendError(w, http.StatusConflict, fmt.Errorf("user with email %s already exists", req.Email))
+				sendError(w, http.StatusConflict, err)
 				return
 			}
 			sendError(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
