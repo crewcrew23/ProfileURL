@@ -1,0 +1,5 @@
+env: ${ENV}
+addr: "${ADDR}"
+storage_path: "${STORAGE_PATH}"
+token_ttl: ${TOKEN_TTL}
+secret: ${SECRET}
